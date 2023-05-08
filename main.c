@@ -54,6 +54,10 @@ typedef struct Node{
 
 }node;
 
+typedef struct FILA{
+
+}fila;
+
 node *insert(node *list, char *E){
     node *newNode = (node*)malloc(sizeof(node));
     newNode->data = E;
@@ -61,24 +65,32 @@ node *insert(node *list, char *E){
     return newNode;
 }
 
-char compareStrings(node *list, char *S, char *E){
-    char S_compare_start[]="start", S_compare_download[]="download";
+
+void comeca(node *list,char *E, int A){
+
+    scanf("%s %d", E, &A);
+    insert(list, E);
+
+
+}
+void compareStrings(node *list, char *S, char *E){
+    char S_compare_start[]="comeca", S_compare_download[]="download";
 
     int A, t;
     if(strcmp(S, S_compare_start) == 0){
         scanf("%s %d", E, &A);
         insert(list, E);
 
-        printf("starting %s %d\n", E, A);
+        printf("comecando %s %d\n", E, A);
         //writeToFile(E);
 
 
     }else
     if(strcmp(S, S_compare_download) == 0){
         printf("%s\n", E);
-        scanf("%d %d", &A, &t);//find out why it's not printing the name of the show
+        scanf("%d %d", &A, &t);//it's not printing because when it loops again the variable resets
 
-        printf("%d episodes of %s downloaded\n", A,E);
+        printf("%d episodios de %s downloaded\n", A,E);
 
     }
 }
@@ -99,7 +111,7 @@ int main(){
 	while(1){
         scanf("%s", S);
         if(strcmp(S, S_compare_exit) == 0){
-            return 0;
+            return 1 ;
         }
         compareStrings(list,S, E);
     }
