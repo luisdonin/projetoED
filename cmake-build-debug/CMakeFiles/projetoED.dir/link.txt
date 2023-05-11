@@ -1,0 +1,1 @@
+/usr/bin/cc -g CMakeFiles/projetoED.dir/main.c.o CMakeFiles/projetoED.dir/fila.c.o -o projetoED 

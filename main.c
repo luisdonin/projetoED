@@ -2,134 +2,101 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#include "headers/heap/FD.h"
-//#include "headers/stack/PD.h"
+#define MAX 100
+typedef struct{
+        char *nome[MAX];
+        int length;
+        int ep;
+}serie;
+typedef struct {
+    char data[MAX][100];
+    int inicio, fim, tamanho;
+} fila;
 
-#define MAX  100
+void criaFila(fila* f) {
+    f->inicio = 0;
+    f->fim = -1;
+    f->tamanho = 0;
+}
 
-/*
- *Rules: 
- *	He can't watch two shows at the same time
- *	When starting a new show, he downloads the episodes in chronological order
- *	He watches it in chronological oder as well
- *	He can only watch the shows he has already downloaded
- *	if he starts show A, he can start show B, but he must finish show B before going back to A, and he must continue A from the point he had stopped before going to B
- *	A show is completed when all episodes are completed
- * */
+int filaVazia(fila* f) {
+    return (f->tamanho == 0);
+}
 
-/*
- * Input: start S E
- * Input: download quantity of show 20min
- *
- * */
-//scanf("%s" ,S);
-//scanf("%s", E);
-//scanf("%d", &A);
+int filaCheia(fila* f) {
+    return (f->tamanho == MAX);
+}
 
-/*
- *if (input: start show episode --> starting show) (name of the show)
- *else if(input: download n_episodes len_episode --> n episodes of show downloaded)
- *else if(input: watch n --> n episodes of show watched (n minutes)
- *The problem: I need to compare all these string inputs, efficiently :c
- *
- *
- * */
-//strCompare = strcmp(S, S_compare_start);
-
-/*char writeToFile(char *E){
-    FILE *f = fopen("shows.txt", "w");
-    if(f == NULL){
-        printf("Error!");
-        exit(1);
+void insere(fila* f, const char* data) {
+    if (filaCheia(f)) {
+        printf("Fila Cheia");
+        return;
     }
-    fprintf(f, "Show name: %s", E);
-    fclose(f);
+    f->fim = (f->fim + 1) % MAX;
+    strncpy(f->data[f->fim], data, sizeof(f->data[f->fim]));
+    f->tamanho++;
 
-    return 1;
-}*/
-typedef struct Node{
-
-    char *data;
-   struct  Node *next;
-
-}node;
-
-typedef struct FILA{
-
-}fila;
-
-node *insert(node *list, char *E){
-    node *newNode = (node*)malloc(sizeof(node));
-    newNode->data = E;
-    newNode->next = list;
-    return newNode;
+  //  printf("Inserted: %s\n", f->data[f->fim]);
 }
 
+void printNodes(fila *f) {
+    if (filaVazia(f)) {
+        printf("Fila vazia\n");
+        return;
+    }
 
-void comeca(node *list,char *E, int A){
-
-    scanf("%s %d", E, &A);
-    insert(list, E);
-
-
-}
-void compareStrings(node *list, char *S, char *E){
-    char S_compare_start[]="comeca", S_compare_download[]="download";
-
-    int A, t;
-    if(strcmp(S, S_compare_start) == 0){
-        scanf("%s %d", E, &A);
-        insert(list, E);
-
-        printf("comecando %s %d\n", E, A);
-        //writeToFile(E);
-
-
-    }else
-    if(strcmp(S, S_compare_download) == 0){
-        printf("%s\n", E);
-        scanf("%d %d", &A, &t);//it's not printing because when it loops again the variable resets
-
-        printf("%d episodios de %s downloaded\n", A,E);
-
+    printf("Series na fila:\n");
+    int i;
+    for (i = 0; i < f->tamanho; i++) {
+        printf("%s\n", f->data[(f->inicio + i) % MAX]);
     }
 }
 
 
-
-int main(){
-	/*
-	 * S --> instruction "start"
-	 * E --> name of the show
-	 * A --> episode number
-	 * */
-    node *list;
+void compareStrings(fila* f, char* S) {
+    char S_compare_start[] = "comeca", S_compare_download[] = "download", S_compare_assiste[] = "assiste", S_compare_fila[] = "fila";
+    serie anime;
 
 
-	char S[6], E[MAX],  S_compare_exit[] = "f";
-    
-	while(1){
+    if (strcmp(S, S_compare_start) == 0) {
+        scanf("%s %d", anime.nome, &anime.ep);
+        printf("comecando %s %d\n", anime.nome, anime.ep);
+        insere(f, anime.nome);
+
+
+    }
+
+    if (strcmp(S, S_compare_download) == 0) {
+        printf("%s\n", f->data[f->inicio]);
+        scanf("%d %d", &anime.ep, &anime.length);
+        printf("%d episodios de %s baixados\n", anime.ep, f->data[f->inicio]);
+    }
+
+    if (strcmp(S, S_compare_assiste) == 0) {
+
+        printf("%d eps de %s assistidos (%d minutos)\n", anime.ep, f->data[f->inicio], (anime.length*anime.ep));
+    }
+
+    if(strcmp(S, S_compare_fila)==0){
+        printNodes(f);
+    }
+
+}
+
+int main() {
+    fila f;
+    criaFila(&f);
+
+    char S[6], S_compare_exit[] = "f";
+
+    while (1) {
         scanf("%s", S);
-        if(strcmp(S, S_compare_exit) == 0){
-            return 1 ;
+        if (strcmp(S, S_compare_exit) == 0) {
+            return 1;
         }
-        compareStrings(list,S, E);
+        compareStrings(&f, S);
     }
 
-
-	return 0;
+    return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
