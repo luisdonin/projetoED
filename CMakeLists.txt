@@ -4,4 +4,4 @@ project(projetoED C)
 set(CMAKE_C_STANDARD 11)
 
 add_executable(projetoED
-        main.c fila.c)
+        main.c FE.c)
