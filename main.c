@@ -2,122 +2,185 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#include "headers/heap/FD.h"
-//#include "headers/stack/PD.h"
+#define MAX_SIZE 100
+#define MAX_ANIME 10
 
-#define MAX  100
+typedef struct {
+  char anime[50];
+  int episode_num;
+  int length;
+} Node;
 
-/*
- *Rules: 
- *	He can't watch two shows at the same time
- *	When starting a new show, he downloads the episodes in chronological order
- *	He watches it in chronological oder as well
- *	He can only watch the shows he has already downloaded
- *	if he starts show A, he can start show B, but he must finish show B before going back to A, and he must continue A from the point he had stopped before going to B
- *	A show is completed when all episodes are completed
- * */
+Node stack[MAX_SIZE];
+int top = -1;
 
-/*
- * Input: start S E
- * Input: download quantity of show 20min
- *
- * */
-//scanf("%s" ,S);
-//scanf("%s", E);
-//scanf("%d", &A);
-
-/*
- *if (input: start show episode --> starting show) (name of the show)
- *else if(input: download n_episodes len_episode --> n episodes of show downloaded)
- *else if(input: watch n --> n episodes of show watched (n minutes)
- *The problem: I need to compare all these string inputs, efficiently :c
- *
- *
- * */
-//strCompare = strcmp(S, S_compare_start);
-
-/*char writeToFile(char *E){
-    FILE *f = fopen("shows.txt", "w");
-    if(f == NULL){
-        printf("Error!");
-        exit(1);
-    }
-    fprintf(f, "Show name: %s", E);
-    fclose(f);
-
-    return 1;
-}*/
-typedef struct Node{
-
-    char *data;
-   struct  Node *next;
-
-}node;
-
-node *insert(node *list, char *E){
-    node *newNode = (node*)malloc(sizeof(node));
-    newNode->data = E;
-    newNode->next = list;
-    return newNode;
+void push(char *anime) {
+  if (top == MAX_SIZE - 1) {
+    printf("Stack overflow\n");
+    return;
+  }
+  top++;
+  strcpy(stack[top].anime, anime);
 }
 
-char compareStrings(node *list, char *S, char *E){
-    char S_compare_start[]="start", S_compare_download[]="download";
+typedef struct {
+  Node queue[MAX_SIZE];
+  int front;
+  int rear;
+  int max_episodes;
+} Queue;
 
-    int A, t;
-    if(strcmp(S, S_compare_start) == 0){
-        scanf("%s %d", E, &A);
-        insert(list, E);
+Queue queues[MAX_ANIME];
+int num_queues = 0;
 
-        printf("starting %s %d\n", E, A);
-        //writeToFile(E);
-
-
-    }else
-    if(strcmp(S, S_compare_download) == 0){
-        printf("%s\n", E);
-        scanf("%d %d", &A, &t);//find out why it's not printing the name of the show
-
-        printf("%d episodes of %s downloaded\n", A,E);
-
+Queue *get_queue(char *anime) {
+  for (int i = 0; i < num_queues; i++) {
+    if (strcmp(queues[i].queue[0].anime, anime) == 0) {
+      return &queues[i];
     }
+  }
+  if (num_queues == MAX_ANIME) {
+    printf("Maximum number of anime reached\n");
+    exit(1);
+  }
+  num_queues++;
+  strcpy(queues[num_queues - 1].queue[0].anime, anime);
+  queues[num_queues - 1].front = 0;
+  queues[num_queues - 1].rear = -1;
+  return &queues[num_queues - 1];
 }
 
+void enqueue(Queue *queue, int num_episodes, int length) {
+  if (queue->rear - queue->front + 1 + num_episodes > queue->max_episodes) {
+    printf("cannot download more than %d episodes\n", queue->max_episodes);
+    return;
+  }
+  for (int i = 1; i <= num_episodes; i++) {
+    if (queue->rear == MAX_SIZE - 1) {
+      printf("Queue overflow\n");
+      return;
+    }
+    queue->rear++;
+    strcpy(queue->queue[queue->rear].anime, stack[top].anime);
+    queue->queue[queue->rear].episode_num = i;
+    queue->queue[queue->rear].length = length;
+  }
+  printf("downloading %d episodes of %d %s of %d minutes each\n", num_episodes,
+         queue->max_episodes, stack[top].anime, length);
+}
 
+Node dequeue(Queue *queue) {
+  if (queue->front > queue->rear) {
+    printf("Queue underflow\n");
+    exit(1);
+  }
+  Node temp = queue->queue[queue->front];
+  queue->front++;
+  return temp;
+}
 
-int main(){
-	/*
-	 * S --> instruction "start"
-	 * E --> name of the show
-	 * A --> episode number
-	 * */
-    node *list;
+void print_queue(Queue *queue) {
+  if (queue->front > queue->rear) {
+    printf("Queue is empty\n");
+    return;
+  }
+  for (int i = queue->front; i <= queue->rear; i++) {
+    printf("%s %d ", queue->queue[i].anime, queue->queue[i].episode_num);
+  }
+  printf("\n");
+}
 
+void print_remaining() {
+  int remaining_shows = 0;
+  for (int i = 0; i < num_queues; i++) {
+    Queue *q = &queues[i];
+    if (q->rear - q->front + 1 > 0) {
+      remaining_shows++;
+      printf("%s has %d episodes remaining of %d\n", q->queue[q->front].anime,
+             q->rear - q->front + 1, q->max_episodes);
+    }
+  }
+  if (remaining_shows == 0) {
+    printf("no shows to watch\n");
+  }
+}
 
-	char S[6], E[MAX],  S_compare_exit[] = "f";
+int main() {
+  char input[10];
+  char anime[50];
+  int num_episodes, length;
+  int remaining_time = 0;
+  Queue *current_queue = NULL;
+  int first_input = 1;
+  while (1) {
+    scanf("%s", input);
+    if (strcmp(input, "f") == 0) {
+      print_remaining();
+      break;
+    } else if (strcmp(input, "start") == 0) {
+      scanf("%s %d", anime, &num_episodes);
+      printf("starting %s with %d episodes\n", anime, num_episodes);
+      push(anime);
+      current_queue = get_queue(anime);
+      current_queue->max_episodes = num_episodes;
+      first_input = 0;
+    } else if (strcmp(input, "download") == 0) {
+      if (first_input) {
+        printf("no shows to download\n");
+        continue;
+      }
+      scanf("%d %d", &num_episodes, &length);
+      enqueue(current_queue, num_episodes, length);
+    } else if (strcmp(input, "watch") == 0) {
+      if (first_input) {
+        printf("no shows to watch\n");
+        continue;
+      }
+      scanf("%d", &num_episodes);
+      if (current_queue->front > current_queue->rear && top > 0) {
+        top--;
+        current_queue = get_queue(stack[top].anime);
+        printf("no more episodes of %s left to watch\n", stack[top + 1].anime);
+        continue;
+      } else if (current_queue->front > current_queue->rear && top == 0) {
+        printf("no more episodes of %s left to watch\n", stack[top].anime);
+        continue;
+      }
+      Node temp = current_queue->queue[current_queue->front];
+      remaining_time +=
+          (current_queue->rear - current_queue->front + 1) * temp.length;
+      if (num_episodes > current_queue->rear - current_queue->front + 1) {
+        printf("only %d left\n",
+               current_queue->rear - current_queue->front + 1);
+        remaining_time -=
+            (current_queue->rear - current_queue->front + 1) * temp.length;
+        printf("%d watched (%d minutes)\n",
+               current_queue->rear - current_queue->front + 1,
+               (current_queue->rear - current_queue->front + 1) * temp.length);
+        printf("%d remaining\n",
+               current_queue->rear - current_queue->front + 1);
+        while (current_queue->front <= current_queue->rear &&
+               strcmp(current_queue->queue[current_queue->front].anime,
+                      stack[top].anime) == 0)
+          dequeue(current_queue);
+        if (top > 0) top--;
+        current_queue = get_queue(stack[top].anime);
+      } else {
+        remaining_time -= num_episodes * temp.length;
+        printf("%d watched (%d minutes)\n", num_episodes,
+               num_episodes * temp.length);
+        printf("%d remaining\n",
+               current_queue->rear - current_queue->front + 1 - num_episodes);
+        for (int i = 0; i < num_episodes &&
+                        strcmp(current_queue->queue[current_queue->front].anime,
+                               stack[top].anime) == 0;
+             i++)
+          dequeue(current_queue);
+      }
+    } else if (strcmp(input, "print_queue") == 0) {
+      print_queue(current_queue);
+    }
+  }
+  return 0;
+}
     
-	while(1){
-        scanf("%s", S);
-        if(strcmp(S, S_compare_exit) == 0){
-            return 0;
-        }
-        compareStrings(list,S, E);
-    }
-
-
-	return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
