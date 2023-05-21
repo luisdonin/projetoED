@@ -55,22 +55,22 @@ Fila_estatica *get_Fila_estatica(animes *q, char *anime) {
 }
 
 void insere_fila(Fila_estatica *fila_est, Pilha_estatica *s, int num_episodes, int tempo_episodio) {
-  if (fila_est->fim - fila_est->inicio + 1 + num_episodes > fila_est->max_episodes) {
-    printf("nao da pra baixar mais que %d episodios\n", fila_est->max_episodes);
-    return;
-  }
-  for (int i = 1; i <= num_episodes; i++) {
-    if (fila_est->fim == tam_max - 1) {
-      printf("acima do limite\n");
-      return;
+    int episodes_to_add = num_episodes;
+    if (fila_est->fim - fila_est->inicio + 1 + num_episodes > fila_est->max_episodes) {
+        episodes_to_add = fila_est->max_episodes - (fila_est->fim - fila_est->inicio + 1);
     }
-    fila_est->fim++;
-    strcpy(fila_est->fila_est[fila_est->fim].anime, s->pilha_est[s->topo].anime);
-    fila_est->fila_est[fila_est->fim].num_episodio = i;
-    fila_est->fila_est[fila_est->fim].tempo_episodio = tempo_episodio;
-  }
-  printf(" %d episodios de %s baixados\n", num_episodes,
-         s->pilha_est[s->topo].anime);
+    for (int i = 1; i <= episodes_to_add; i++) {
+        if (fila_est->fim == tam_max - 1) {
+            printf("acima do limite\n");
+            return;
+        }
+        fila_est->fim++;
+        strcpy(fila_est->fila_est[fila_est->fim].anime, s->pilha_est[s->topo].anime);
+        fila_est->fila_est[fila_est->fim].num_episodio = i;
+        fila_est->fila_est[fila_est->fim].tempo_episodio = tempo_episodio;
+    }
+    printf(" %d episodios de %s baixados\n", episodes_to_add,
+           s->pilha_est[s->topo].anime);
 }
 
 Nodo remove_fila(Fila_estatica *fila_est) {
