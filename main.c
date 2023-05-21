@@ -1,186 +1,198 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define MAX_SIZE 100
-#define MAX_ANIME 10
+#define tam_max 2000
+#define anime_max 10
 
 typedef struct {
   char anime[50];
-  int episode_num;
-  int length;
-} Node;
+  int num_episodio;
+  int tempo_episodio;
+} Nodo;
 
-Node stack[MAX_SIZE];
-int top = -1;
+typedef struct {
+  Nodo pilha_est[tam_max];
+  int topo;
+} Pilha_estatica;
 
-void push(char *anime) {
-  if (top == MAX_SIZE - 1) {
-    printf("Stack overflow\n");
+void push(Pilha_estatica *s, char *anime) {
+  if (s->topo == tam_max - 1) {
+    printf("stack overflow\n");
     return;
   }
-  top++;
-  strcpy(stack[top].anime, anime);
+  s->topo++;
+  strcpy(s->pilha_est[s->topo].anime, anime);
 }
 
 typedef struct {
-  Node queue[MAX_SIZE];
-  int front;
-  int rear;
+  Nodo fila_est[tam_max];
+  int inicio;
+  int fim;
   int max_episodes;
-} Queue;
+} Fila_estatica;
 
-Queue queues[MAX_ANIME];
-int num_queues = 0;
+typedef struct {
+  Fila_estatica animes[anime_max];
+  int num_animes;
+  int assistidos[anime_max];
+} animes;
 
-Queue *get_queue(char *anime) {
-  for (int i = 0; i < num_queues; i++) {
-    if (strcmp(queues[i].queue[0].anime, anime) == 0) {
-      return &queues[i];
+Fila_estatica *get_Fila_estatica(animes *q, char *anime) {
+  for (int i = 0; i < q->num_animes; i++) {
+    if (strcmp(q->animes[i].fila_est[0].anime, anime) == 0) {
+      return &q->animes[i];
     }
   }
-  if (num_queues == MAX_ANIME) {
-    printf("Maximum number of anime reached\n");
+  if (q->num_animes == anime_max) {
+    printf("numero maximo de animes atingido\n");
     exit(1);
   }
-  num_queues++;
-  strcpy(queues[num_queues - 1].queue[0].anime, anime);
-  queues[num_queues - 1].front = 0;
-  queues[num_queues - 1].rear = -1;
-  return &queues[num_queues - 1];
+  q->num_animes++;
+  strcpy(q->animes[q->num_animes - 1].fila_est[0].anime, anime);
+  q->animes[q->num_animes - 1].inicio = 0;
+  q->animes[q->num_animes - 1].fim = -1;
+  return &q->animes[q->num_animes - 1];
 }
 
-void enqueue(Queue *queue, int num_episodes, int length) {
-  if (queue->rear - queue->front + 1 + num_episodes > queue->max_episodes) {
-    printf("cannot download more than %d episodes\n", queue->max_episodes);
+void insere_fila(Fila_estatica *fila_est, Pilha_estatica *s, int num_episodes, int tempo_episodio) {
+  if (fila_est->fim - fila_est->inicio + 1 + num_episodes > fila_est->max_episodes) {
+    printf("nao da pra baixar mais que %d episodios\n", fila_est->max_episodes);
     return;
   }
   for (int i = 1; i <= num_episodes; i++) {
-    if (queue->rear == MAX_SIZE - 1) {
-      printf("Queue overflow\n");
+    if (fila_est->fim == tam_max - 1) {
+      printf("acima do limite\n");
       return;
     }
-    queue->rear++;
-    strcpy(queue->queue[queue->rear].anime, stack[top].anime);
-    queue->queue[queue->rear].episode_num = i;
-    queue->queue[queue->rear].length = length;
+    fila_est->fim++;
+    strcpy(fila_est->fila_est[fila_est->fim].anime, s->pilha_est[s->topo].anime);
+    fila_est->fila_est[fila_est->fim].num_episodio = i;
+    fila_est->fila_est[fila_est->fim].tempo_episodio = tempo_episodio;
   }
-  printf("downloading %d episodes of %d %s of %d minutes each\n", num_episodes,
-         queue->max_episodes, stack[top].anime, length);
+  printf(" %d episodios de %s baixados\n", num_episodes,
+         s->pilha_est[s->topo].anime);
 }
 
-Node dequeue(Queue *queue) {
-  if (queue->front > queue->rear) {
-    printf("Queue underflow\n");
+Nodo remove_fila(Fila_estatica *fila_est) {
+  if (fila_est->inicio > fila_est->fim) {
+    printf("Fila_estatica underflow\n");
     exit(1);
   }
-  Node temp = queue->queue[queue->front];
-  queue->front++;
+  Nodo temp = fila_est->fila_est[fila_est->inicio];
+  fila_est->inicio++;
   return temp;
 }
 
-void print_queue(Queue *queue) {
-  if (queue->front > queue->rear) {
-    printf("Queue is empty\n");
+void print_Fila_estatica(Fila_estatica *fila_est) {
+  if (fila_est->inicio > fila_est->fim) {
+    printf("Fila vazia\n");
     return;
   }
-  for (int i = queue->front; i <= queue->rear; i++) {
-    printf("%s %d ", queue->queue[i].anime, queue->queue[i].episode_num);
+  for (int i = fila_est->inicio; i <= fila_est->fim; i++) {
+    printf("%s %d ", fila_est->fila_est[i].anime, fila_est->fila_est[i].num_episodio);
   }
   printf("\n");
 }
 
-void print_remaining() {
-  int remaining_shows = 0;
-  for (int i = 0; i < num_queues; i++) {
-    Queue *q = &queues[i];
-    if (q->rear - q->front + 1 > 0) {
-      remaining_shows++;
-      printf("%s has %d episodes remaining of %d\n", q->queue[q->front].anime,
-             q->rear - q->front + 1, q->max_episodes);
+void print_remaining(animes *q) {
+  int remaining_anime = 0;
+  for (int i = 0; i < q->num_animes; i++) {
+    Fila_estatica *fila_est = &q->animes[i];
+    if (fila_est->fim - fila_est->inicio + 1 > 0 ||
+        q->assistidos[i] < fila_est->max_episodes) {
+      remaining_anime++;
+      printf("%s: faltam baixar %d e assistir %d\n",
+             fila_est->fila_est[fila_est->inicio].anime,
+             fila_est->max_episodes - (fila_est->fim - fila_est->inicio + 1) -
+                 q->assistidos[i],
+             fila_est->max_episodes - q->assistidos[i]);
     }
   }
-  if (remaining_shows == 0) {
-    printf("no shows to watch\n");
+  if (remaining_anime == 0) {
+    printf("nao ha anime para assistir\n");
+  }
+}
+
+void comeca(Pilha_estatica *s, animes *q, char *anime, int num_episodes) {
+  printf("comecando %s\n", anime);
+  push(s, anime);
+  Fila_estatica *filaAtual = get_Fila_estatica(q, anime);
+  filaAtual->max_episodes = num_episodes;
+}
+
+void download( Pilha_estatica *s, Fila_estatica **filaAtual, int num_episodes,int tempo_episodio) {
+  insere_fila(*filaAtual, s, num_episodes, tempo_episodio);
+}
+
+void assiste(animes *q, Pilha_estatica *s, Fila_estatica **filaAtual, int num_episodes) {
+  if ((*filaAtual)->inicio > (*filaAtual)->fim && s->topo > 0) {
+    s->topo--;
+    *filaAtual = get_Fila_estatica(q, s->pilha_est[s->topo].anime);
+    printf("nao ha mais episodios de %s para assistir\n",
+           s->pilha_est[s->topo + 1].anime);
+    return;
+  } else if ((*filaAtual)->inicio > (*filaAtual)->fim && s->topo == 0) {
+    printf("nao ha mais episodios de %s para assistir\n",
+           s->pilha_est[s->topo].anime);
+    return;
+  }
+
+  Nodo temp = (*filaAtual)->fila_est[(*filaAtual)->inicio];
+  if (num_episodes > (*filaAtual)->fim - (*filaAtual)->inicio + 1) {
+    printf("apenas %d restantes\n",
+           (*filaAtual)->fim - (*filaAtual)->inicio + 1);
+
+    printf("%d episodios assistidos (%d minutoss)\n",
+           (*filaAtual)->fim - (*filaAtual)->inicio + 1,
+           (*filaAtual)->fim - (*filaAtual)->inicio + 1 * temp.tempo_episodio);
+
+           
+    while ((*filaAtual)->inicio <= (*filaAtual)->fim && 
+    strcmp((*filaAtual)->fila_est[(*filaAtual)->inicio].anime,s->pilha_est[s->topo].anime) == 0)
+      remove_fila(*filaAtual);
+
+
+    if (s->topo > 0) s->topo--;
+    *filaAtual = get_Fila_estatica(q, s->pilha_est[s->topo].anime);
+  } 
+  
+  
+  else {
+    printf("%d episodios de %s assistidos (%d minutos)\n", num_episodes,
+           s->pilha_est[s->topo].anime, num_episodes * temp.tempo_episodio);
+    for (int i = 0;
+         i < num_episodes &&
+         strcmp((*filaAtual)->fila_est[(*filaAtual)->inicio].anime,
+                s->pilha_est[s->topo].anime) == 0;
+         i++)
+      remove_fila(*filaAtual);
   }
 }
 
 int main() {
-  char input[10];
+  Pilha_estatica s = {.topo = -1};
+  animes q = {.num_animes = 0};
+  char entrada[10];
   char anime[50];
-  int num_episodes, length;
-  int remaining_time = 0;
-  Queue *current_queue = NULL;
-  int first_input = 1;
+  int num_episodes, tempo_episodio;
+  Fila_estatica *filaAtual = NULL;
+
   while (1) {
-    scanf("%s", input);
-    if (strcmp(input, "f") == 0) {
-      print_remaining();
+    scanf("%s", entrada);
+
+    if (strcmp(entrada, "f") == 0) {
+      print_remaining(&q);
       break;
-    } else if (strcmp(input, "start") == 0) {
+    } else if (strcmp(entrada, "comeca") == 0) {
       scanf("%s %d", anime, &num_episodes);
-      printf("starting %s with %d episodes\n", anime, num_episodes);
-      push(anime);
-      current_queue = get_queue(anime);
-      current_queue->max_episodes = num_episodes;
-      first_input = 0;
-    } else if (strcmp(input, "download") == 0) {
-      if (first_input) {
-        printf("no shows to download\n");
-        continue;
-      }
-      scanf("%d %d", &num_episodes, &length);
-      enqueue(current_queue, num_episodes, length);
-    } else if (strcmp(input, "watch") == 0) {
-      if (first_input) {
-        printf("no shows to watch\n");
-        continue;
-      }
+      comeca(&s, &q, anime, num_episodes);
+      filaAtual = get_Fila_estatica(&q, anime);
+    } else if (strcmp(entrada, "download") == 0) {
+      scanf("%d %d", &num_episodes, &tempo_episodio);
+      download( &s, &filaAtual, num_episodes, tempo_episodio);
+    } else if (strcmp(entrada, "assiste") == 0) {
       scanf("%d", &num_episodes);
-      if (current_queue->front > current_queue->rear && top > 0) {
-        top--;
-        current_queue = get_queue(stack[top].anime);
-        printf("no more episodes of %s left to watch\n", stack[top + 1].anime);
-        continue;
-      } else if (current_queue->front > current_queue->rear && top == 0) {
-        printf("no more episodes of %s left to watch\n", stack[top].anime);
-        continue;
-      }
-      Node temp = current_queue->queue[current_queue->front];
-      remaining_time +=
-          (current_queue->rear - current_queue->front + 1) * temp.length;
-      if (num_episodes > current_queue->rear - current_queue->front + 1) {
-        printf("only %d left\n",
-               current_queue->rear - current_queue->front + 1);
-        remaining_time -=
-            (current_queue->rear - current_queue->front + 1) * temp.length;
-        printf("%d watched (%d minutes)\n",
-               current_queue->rear - current_queue->front + 1,
-               (current_queue->rear - current_queue->front + 1) * temp.length);
-        printf("%d remaining\n",
-               current_queue->rear - current_queue->front + 1);
-        while (current_queue->front <= current_queue->rear &&
-               strcmp(current_queue->queue[current_queue->front].anime,
-                      stack[top].anime) == 0)
-          dequeue(current_queue);
-        if (top > 0) top--;
-        current_queue = get_queue(stack[top].anime);
-      } else {
-        remaining_time -= num_episodes * temp.length;
-        printf("%d watched (%d minutes)\n", num_episodes,
-               num_episodes * temp.length);
-        printf("%d remaining\n",
-               current_queue->rear - current_queue->front + 1 - num_episodes);
-        for (int i = 0; i < num_episodes &&
-                        strcmp(current_queue->queue[current_queue->front].anime,
-                               stack[top].anime) == 0;
-             i++)
-          dequeue(current_queue);
-      }
-    } else if (strcmp(input, "print_queue") == 0) {
-      print_queue(current_queue);
+      assiste(&q, &s, &filaAtual, num_episodes);
     }
   }
-  return 0;
 }
-    
